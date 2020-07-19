@@ -6,3 +6,6 @@ edition = "2018"
 
 [dependencies]
 rocket = "0.4.5"
+postgres = "0.17"
+postgres-types = { version = "0.1", features = ["derive"]}
+failure = { version = "0.1", features = ["derive"] }

@@ -39,10 +39,20 @@ impl NewEntry {
 
     /// Verifica se a entrada é válida.
     ///
-    /// Uma entrada é válida se possui origem ou destino entre 1 e 10, e se o
-    /// dia informado está entre 1 e 30.
+    /// Uma entrada é válida se possui origem ou destino (mas não os dois) entre
+    /// 1 e 10, e se o dia informado está entre 1 e 30.
     pub fn is_valid(&self) -> bool {
-        (self.origem.is_some() || self.destino.is_some()) && (self.dia >= 0 && self.dia <= 30)
+        (self
+            .origem
+            .map(|i| i >= 1 && i <= 10)
+            .or(Some(false))
+            .unwrap()
+            | self
+                .destino
+                .map(|i| i >= 1 && i <= 10)
+                .or(Some(false))
+                .unwrap())
+            && (self.dia >= 0 && self.dia <= 30)
     }
 }
 

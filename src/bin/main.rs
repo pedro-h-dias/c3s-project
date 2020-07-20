@@ -7,6 +7,8 @@ use erp::{Entry, NewEntry};
 use postgres::{Client, NoTls};
 use rocket::http::RawStr;
 use rocket_contrib::json::Json;
+use rocket_contrib::uuid::Uuid as RocketUuid;
+use uuid::Uuid;
 
 #[post("/", format = "json", data = "<entry>")]
 fn create_entry(entry: Json<NewEntry>) -> &'static str {
@@ -41,7 +43,16 @@ fn get_entries(param: &RawStr, value: i32) -> String {
 }
 
 #[put("/delete?<id>")]
-fn delete_entry(id: i32) -> &'static str {
+fn delete_entry(id: RocketUuid) -> &'static str {
+    // Abre a conexao com o banco de dados
+    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
+        .expect("Failed to connect to database.");
+    let mut tr = conn.transaction().expect("Failed to initiate transaction");
+
+    let id = Uuid::from_bytes(*id.as_bytes());
+
+    Entry::delete(&mut tr, id).expect("Failed to delete");
+
     "Deletou entrada"
 }
 

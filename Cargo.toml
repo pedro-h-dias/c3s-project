@@ -6,10 +6,11 @@ edition = "2018"
 
 [dependencies]
 rocket = "0.4"
-rocket_contrib = "0.4"
-postgres = "0.17"
-postgres-types = { version = "0.1", features = ["derive"]}
+rocket_contrib = { version = "0.4", features = ["uuid"] }
+postgres = { version = "0.17", features = ["with-uuid-0_8"] }
+postgres-types = { version = "0.1", features = ["derive"] }
 failure = { version = "0.1", features = ["derive"] }
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
+uuid = { version = "0.8", features = ["serde", "v4"] }

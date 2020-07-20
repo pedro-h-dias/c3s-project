@@ -1,5 +1,5 @@
 use crate::err::Result;
-use crate::{Classificacao, Entry};
+use crate::Classificacao;
 use postgres::Transaction;
 use serde_derive::Deserialize;
 
@@ -86,7 +86,6 @@ mod tests {
         let result = new_entry.persist(&mut tr);
         tr.rollback().unwrap();
 
-        result.unwrap();
-        //assert!(result.is_ok());
+        assert!(result.is_ok());
     }
 }

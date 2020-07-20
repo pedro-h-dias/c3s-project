@@ -99,7 +99,6 @@ mod tests {
 
     #[test]
     fn delete_entry() {
-        // Abre a conexao com o banco de dados
         let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
             .expect("Failed to connect to database.");
         let mut tr = conn.transaction().expect("Failed to initiate transaction");
@@ -121,10 +120,10 @@ mod tests {
                 &entry.valor,
                 &entry.dia,
                 &entry.class,
-                &entry.origem
+                &entry.origem,
             ],
         )
-        .unwrap();
+        .expect("Failed to insert test data into the database");
 
         let id =
             Uuid::from_str("acbbef75-09a9-4acc-8d12-47d99862b37e").expect("Failed to parse UUID");

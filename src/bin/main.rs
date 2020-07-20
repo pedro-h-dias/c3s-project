@@ -3,60 +3,62 @@
 #[macro_use]
 extern crate rocket;
 
-use erp::{Entry, NewEntry};
+use erp::{
+    err::{ErpError, Result},
+    Entry, NewEntry,
+};
 use postgres::{Client, NoTls};
 use rocket::http::RawStr;
 use rocket_contrib::{json::Json, uuid::Uuid as RocketUuid};
 use uuid::Uuid;
 
 #[post("/", format = "json", data = "<entry>")]
-fn create_entry(entry: Json<NewEntry>) -> &'static str {
+fn create_entry(entry: Json<NewEntry>) -> Result<()> {
     let new_entry = entry.into_inner();
 
+    // Se a entrada é inválida, retorna BadRequest.
     if !new_entry.is_valid() {
-        panic!()
+        return Err(ErpError::BadRequest);
     }
 
-    // Abre a conexao com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
-        .expect("Failed to connect to database.");
-    let mut tr = conn.transaction().expect("Failed to initiate transaction");
+    // Abre a conexão com o banco de dados.
+    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+    let mut tr = conn.transaction()?;
 
-    new_entry
-        .persist(&mut tr)
-        .expect("Failed to persist to database.");
+    // Persiste o lançamento no banco de dados.
+    new_entry.persist(&mut tr)?;
 
-    "Criou entrada"
+    Ok(())
 }
 
 #[get("/?<param>&<value>")]
-fn get_entries(param: &RawStr, value: i32) -> String {
+fn get_entries(param: &RawStr, value: i32) -> Result<Json<Vec<Entry>>> {
     // Abre a conexão com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
-        .expect("failed to connect to database.");
+    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
 
-    let entries = Entry::get_by(&mut conn, param.as_str(), value).expect("Failed to get entries.");
+    // Busca os lançamentos com base no parâmetro informado.
+    let entries = Entry::get_by(&mut conn, param.as_str(), value)?;
 
-    // Retorna os lançamentos em formato de debug ainda
-    let mut s = String::new();
-    for entry in entries {
-        s.insert_str(0, &format!("{:?}\n", entry));
-    }
-    return s;
+    // Retorna os lançamentos em formato JSON.
+    Ok(Json(entries))
 }
 
 #[put("/delete?<id>")]
-fn delete_entry(id: RocketUuid) -> &'static str {
-    // Abre a conexao com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
-        .expect("Failed to connect to database.");
-    let mut tr = conn.transaction().expect("Failed to initiate transaction");
+fn delete_entry(id: RocketUuid) -> Result<()> {
+    // Abre a conexão com o banco de dados.
+    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+    let mut tr = conn.transaction()?;
 
+    // Devido a versões conflitantes de Uuid, é necessária a conversão entre o
+    // RocketUuid e o Uuid aqui.
     let id = Uuid::from_bytes(*id.as_bytes());
 
-    Entry::delete(&mut tr, id).expect("Failed to delete");
+    // Deleta o lançamento com o id informado do banco de dados.
+    //
+    // No futuro, é melhor utilizar deleção lógica ao invés de absoluta.
+    Entry::delete(&mut tr, id)?;
 
-    "Deletou entrada"
+    Ok(())
 }
 
 #[get("/")]

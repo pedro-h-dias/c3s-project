@@ -6,7 +6,7 @@ extern crate serde_derive;
 pub mod err;
 pub mod register;
 
-pub use err::Result;
+use err::{ErpError, Result};
 pub use register::NewEntry;
 
 use postgres::{GenericClient, Transaction};
@@ -78,6 +78,11 @@ impl Entry {
             )
             .expect("Failed to query database");
 
+        // Retorna NotFound caso nenhum resultado seja encontrado.
+        if rows.is_empty() {
+            return Err(ErpError::NotFound);
+        }
+
         // Para cada linha, gerar structs, adicionar em um vetor, e retornar.
         let mut entries: Vec<_> = Vec::with_capacity(rows.len());
         for row in rows {
@@ -95,8 +100,15 @@ impl Entry {
     }
 
     /// Deleta um lançamento dado seu identificador.
+    ///
+    /// Retorna NotFound caso não haja deleções.
     pub fn delete(conn: &mut Transaction, id: Uuid) -> Result<()> {
-        conn.execute("DELETE FROM erp WHERE id = $1", &[&id])?;
+        let deleted = conn.execute("DELETE FROM erp WHERE id = $1", &[&id])?;
+
+        if deleted == 0 {
+            return Err(ErpError::NotFound);
+        }
+
         Ok(())
     }
 }

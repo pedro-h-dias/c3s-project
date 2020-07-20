@@ -9,10 +9,13 @@ pub mod register;
 pub use err::Result;
 pub use register::NewEntry;
 
-use postgres::{Client, Transaction};
+use postgres::{GenericClient, Transaction};
 use postgres_types::{FromSql, ToSql};
 use uuid::Uuid;
 
+/// Enum que representa a Classificação do lançamento.
+///
+/// Um lançamento pode ser um custo, uma despesa ou uma receita.
 #[derive(Debug, ToSql, FromSql, Serialize, Deserialize)]
 #[postgres(name = "classificacao")]
 pub enum Classificacao {
@@ -24,21 +27,22 @@ pub enum Classificacao {
     Despesa,
 }
 
-// Estrutura que representa um lancamento.
-//
-// Alem dos campos obrigatorios, precisa conter a origem
-// ou o destino da transacao.
+/// Estrutura que representa um lançamento.
+///
+/// Além dos campos obrigatórios, precisa conter a origem
+/// ou o destino da transação.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Entry {
-    pub id: Uuid,
-    pub valor: f32,
-    pub dia: i32,
-    pub class: Classificacao,
-    pub origem: Option<i32>,
-    pub destino: Option<i32>,
+    id: Uuid,
+    valor: f32,
+    dia: i32,
+    class: Classificacao,
+    origem: Option<i32>,
+    destino: Option<i32>,
 }
 
 impl Entry {
+    /// Constrói um lançamento a partir de seus campos.
     pub fn new(
         id: Uuid,
         valor: f32,
@@ -57,17 +61,25 @@ impl Entry {
         }
     }
 
-    pub fn get_by(conn: &mut Client, param: &str, value: i32) -> Result<Vec<Self>> {
-        // Conectar no banco e fazer a quary pelo parametro informado
+    /// Busca lançamentos por valor, dia, origem ou destino.
+    ///
+    /// É esperado um int32 para dia, origem ou destino.
+    /// Para valor, é esperado um f32.
+    pub fn get_by(conn: &mut impl GenericClient, param: &str, value: i32) -> Result<Vec<Self>> {
+        // Conectar no banco e fazer a query pelo parâmetro informado.
         let rows = conn
             .query(
-                "SELECT entry_id, valor, dia, class, origem, destino FROM erp WHERE $1 = $2",
-                &[&param, &value],
+                format!(
+                    "SELECT id, valor, dia, class, origem, destino FROM erp WHERE {} = $1",
+                    param
+                )
+                .as_str(),
+                &[&value],
             )
             .expect("Failed to query database");
 
-        // Para cada linha, gerar structs, adicionar em um vetor, e retornar
-        let mut entries: Vec<_> = Vec::new();
+        // Para cada linha, gerar structs, adicionar em um vetor, e retornar.
+        let mut entries: Vec<_> = Vec::with_capacity(rows.len());
         for row in rows {
             let id: Uuid = row.get(0);
             let valor: f32 = row.get(1);
@@ -76,14 +88,13 @@ impl Entry {
             let origem: Option<i32> = row.get(4);
             let destino: Option<i32> = row.get(5);
 
-            let entry = Entry::new(id, valor, dia, class, origem, destino);
-
-            entries.push(entry);
+            entries.push(Entry::new(id, valor, dia, class, origem, destino));
         }
 
         return Ok(entries);
     }
 
+    /// Deleta um lançamento dado seu identificador.
     pub fn delete(conn: &mut Transaction, id: Uuid) -> Result<()> {
         conn.execute("DELETE FROM erp WHERE id = $1", &[&id])?;
         Ok(())
@@ -93,7 +104,7 @@ impl Entry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use postgres::NoTls;
+    use postgres::{Client, NoTls};
     use serde_json::json;
     use std::str::FromStr;
 
@@ -133,5 +144,19 @@ mod tests {
         tr.rollback().unwrap();
 
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn get_entries() {
+        let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
+            .expect("Failed to connect to database.");
+
+        let entries = Entry::get_by(&mut conn, "dia", 25);
+
+        assert!(entries.is_ok());
+
+        for entry in entries.unwrap() {
+            println!("{:?}", entry);
+        }
     }
 }

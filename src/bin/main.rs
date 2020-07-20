@@ -6,8 +6,7 @@ extern crate rocket;
 use erp::{Entry, NewEntry};
 use postgres::{Client, NoTls};
 use rocket::http::RawStr;
-use rocket_contrib::json::Json;
-use rocket_contrib::uuid::Uuid as RocketUuid;
+use rocket_contrib::{json::Json, uuid::Uuid as RocketUuid};
 use uuid::Uuid;
 
 #[post("/", format = "json", data = "<entry>")]
@@ -32,14 +31,18 @@ fn create_entry(entry: Json<NewEntry>) -> &'static str {
 
 #[get("/?<param>&<value>")]
 fn get_entries(param: &RawStr, value: i32) -> String {
-    // Abre a conexao com o banco de dados
+    // Abre a conexão com o banco de dados
     let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
         .expect("failed to connect to database.");
 
-    let lancamentos = Entry::get_by(&mut conn, param.as_str(), value);
+    let entries = Entry::get_by(&mut conn, param.as_str(), value).expect("Failed to get entries.");
 
-    // retorna os lancamentos em formato de debug ainda
-    format!("{:?}", lancamentos)
+    // Retorna os lançamentos em formato de debug ainda
+    let mut s = String::new();
+    for entry in entries {
+        s.insert_str(0, &format!("{:?}\n", entry));
+    }
+    return s;
 }
 
 #[put("/delete?<id>")]

@@ -1,12 +1,11 @@
-use crate::err::Result;
-use crate::Classificacao;
+use crate::{err::Result, Classificacao};
 use postgres::Transaction;
 use serde_derive::Deserialize;
 
-// Estrutura auxiliar para um novo lancamento.
-//
-// Guarda as informacoes de novos lancamentos enquanto
-// eles ainda nao foram persistidos no banco de dados.
+/// Estrutura auxiliar para um novo lançamento.
+///
+/// Guarda as informações de novos lançamentos enquanto
+/// eles ainda não foram persistidos no banco de dados.
 #[derive(Debug, Deserialize)]
 pub struct NewEntry {
     valor: f32,
@@ -17,7 +16,7 @@ pub struct NewEntry {
 }
 
 impl NewEntry {
-    // Persiste o novo lancamento no banco de dados.
+    /// Persiste o novo lançamento no banco de dados.
     pub fn persist(&self, conn: &mut Transaction) -> Result<()> {
         if self.origem.is_some() {
             conn.execute(
@@ -38,9 +37,12 @@ impl NewEntry {
         Ok(())
     }
 
-    // Verifica se possui origem ou destino.
+    /// Verifica se a entrada é válida.
+    ///
+    /// Uma entrada é válida se possui origem ou destino entre 1 e 10, e se o
+    /// dia informado está entre 1 e 30.
     pub fn is_valid(&self) -> bool {
-        self.origem.is_some() || self.destino.is_some()
+        (self.origem.is_some() || self.destino.is_some()) && (self.dia >= 0 && self.dia <= 30)
     }
 }
 
@@ -48,7 +50,6 @@ impl NewEntry {
 mod tests {
     use super::NewEntry;
     use postgres::{Client, NoTls};
-    use serde_json::Value;
 
     #[test]
     fn deserialize_new_entry() {
@@ -77,7 +78,6 @@ mod tests {
 
         let new_entry: NewEntry = serde_json::from_str(data).expect("Failed to deserialize");
 
-        // Abre a conexao com o banco de dados
         let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
             .expect("Failed to connect to database.");
 

@@ -3,64 +3,45 @@
 #[macro_use]
 extern crate rocket;
 
-use c3s::Entry;
+use erp::{Entry, NewEntry};
 use postgres::{Client, NoTls};
+use rocket::http::RawStr;
+use rocket_contrib::json::Json;
 
-#[put("/")]
-fn create_entry() -> &'static str {
-    "Criou entrada"
-}
+#[post("/", format = "json", data = "<entry>")]
+fn create_entry(entry: Json<NewEntry>) -> &'static str {
+    let new_entry = entry.into_inner();
 
-#[get("/valor?<value>")]
-fn get_by_value(value: Option<i32>) -> String {
+    if !new_entry.is_valid() {
+        panic!()
+    }
+
     // Abre a conexao com o banco de dados
     let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
         .expect("Failed to connect to database.");
+    let mut tr = conn.transaction().expect("Failed to initiate transaction");
 
-    let lancamentos = Entry::get_by(&mut conn, "valor", value.unwrap());
+    new_entry
+        .persist(&mut tr)
+        .expect("Failed to persist to database.");
 
-    // Retorna os lancamentos em formato de DEBUG ainda
-    format!("{:?}", lancamentos)
+    "Criou entrada"
 }
 
-#[get("/dia?<value>")]
-fn get_by_day(value: Option<i32>) -> String {
-    // abre a conexao com o banco de dados
+#[get("/?<param>&<value>")]
+fn get_entries(param: &RawStr, value: i32) -> String {
+    // Abre a conexao com o banco de dados
     let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
         .expect("failed to connect to database.");
 
-    let lancamentos = Entry::get_by(&mut conn, "dia", value.unwrap());
+    let lancamentos = Entry::get_by(&mut conn, param.as_str(), value);
 
     // retorna os lancamentos em formato de debug ainda
     format!("{:?}", lancamentos)
 }
 
-#[get("/origem?<value>")]
-fn get_by_origin(value: Option<i32>) -> String {
-    // abre a conexao com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
-        .expect("failed to connect to database.");
-
-    let lancamentos = Entry::get_by(&mut conn, "origem", value.unwrap());
-
-    // retorna os lancamentos em formato de debug ainda
-    format!("{:?}", lancamentos)
-}
-
-#[get("/destino?<value>")]
-fn get_by_destination(value: Option<i32>) -> String {
-    // abre a conexao com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
-        .expect("failed to connect to database.");
-
-    let lancamentos = Entry::get_by(&mut conn, "destino", value.unwrap());
-
-    // retorna os lancamentos em formato de debug ainda
-    format!("{:?}", lancamentos)
-}
-
-#[put("/delete")]
-fn delete_entry() -> &'static str {
+#[put("/delete?<id>")]
+fn delete_entry(id: i32) -> &'static str {
     "Deletou entrada"
 }
 
@@ -73,14 +54,7 @@ fn main() {
     rocket::ignite()
         .mount(
             "/lancamento",
-            routes![
-                create_entry,
-                get_by_value,
-                get_by_day,
-                get_by_origin,
-                get_by_destination,
-                delete_entry
-            ],
+            routes![create_entry, get_entries, delete_entry],
         )
         .mount("/relatorio", routes![get_report])
         .launch();

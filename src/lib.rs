@@ -1,14 +1,18 @@
 #[macro_use]
 extern crate failure;
+#[macro_use]
+extern crate serde_derive;
 
 pub mod err;
+pub mod register;
 
 pub use err::Result;
+pub use register::NewEntry;
 
 use postgres::Client;
-use postgres_types::FromSql;
+use postgres_types::{FromSql, ToSql};
 
-#[derive(FromSql, Debug)]
+#[derive(Debug, ToSql, FromSql, Serialize, Deserialize)]
 #[postgres(name = "classificacao")]
 pub enum Classificacao {
     #[postgres(name = "receita")]

@@ -21,6 +21,7 @@ fn help() -> String {
         GET /lancamento/?dia=           Retorna os lançamentos em um dado dia (entre 1 e 30).
         GET /lancamento/?origem=        Retorna os lançamentos com uma dada origem (entre 1 e 10).
         GET /lancamento/?destino=       Retorna os lançamentos com um dado destino (entre 1 e 10).
+        GET /relatorio/?<dia>&<periodo> Fornece um relatorio de fluxo de caixa para o dia e periodo fornecidos.
         PUT /lancamento/delete?id=      Deleta um lançamento dado seu identificador UUID.
         POST /lancamento/               Insere um lançamento novo.
 

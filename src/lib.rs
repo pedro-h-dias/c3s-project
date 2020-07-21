@@ -78,7 +78,7 @@ impl Entry {
         let rows = if value_int.is_some() {
             conn.query(
                 format!(
-                    "SELECT id, valor, dia, class, origem, destino FROM erp WHERE {} = $1",
+                    "SELECT id, valor, dia, class, origem, destino FROM erp WHERE {} = $1 ORDER BY dia DESC",
                     param
                 )
                 .as_str(),
@@ -87,7 +87,7 @@ impl Entry {
         } else if value_float.is_some() {
             conn.query(
                 format!(
-                    "SELECT id, valor, dia, class, origem, destino FROM erp WHERE {} = $1",
+                    "SELECT id, valor, dia, class, origem, destino FROM erp WHERE {} = $1 ORDER BY dia DESC",
                     param
                 )
                 .as_str(),
@@ -123,7 +123,7 @@ impl Entry {
     pub fn get_all(conn: &mut impl GenericClient) -> Result<Vec<Self>> {
         // Conectar no banco e fazer a query.
         let rows = conn.query(
-            "SELECT id, valor, dia, class, origem, destino FROM erp",
+            "SELECT id, valor, dia, class, origem, destino FROM erp ORDER BY dia DESC",
             &[],
         )?;
 

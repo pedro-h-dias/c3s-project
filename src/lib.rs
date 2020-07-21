@@ -6,9 +6,11 @@ extern crate serde_derive;
 pub mod database;
 pub mod err;
 pub mod register;
+pub mod reports;
 
 use err::{ErpError, Result};
 pub use register::NewEntry;
+pub use reports::Report;
 
 use postgres::{GenericClient, Transaction};
 use postgres_types::{FromSql, ToSql};
@@ -17,7 +19,7 @@ use uuid::Uuid;
 /// Enum que representa a Classificação do lançamento.
 ///
 /// Um lançamento pode ser um custo, uma despesa ou uma receita.
-#[derive(Debug, ToSql, FromSql, Serialize, Deserialize)]
+#[derive(Debug, ToSql, FromSql, Serialize, Deserialize, PartialEq)]
 #[postgres(name = "classificacao")]
 pub enum Classificacao {
     #[postgres(name = "receita")]

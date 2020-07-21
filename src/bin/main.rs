@@ -6,7 +6,7 @@ extern crate rocket;
 use erp::{
     database::get_conn,
     err::{ErpError, Result},
-    Entry, NewEntry,
+    Entry, NewEntry, Report,
 };
 use rocket_contrib::{json::Json, uuid::Uuid as RocketUuid};
 use uuid::Uuid;
@@ -134,9 +134,15 @@ fn delete_entry(id: RocketUuid) -> Result<()> {
     Ok(())
 }
 
-#[get("/")]
-fn get_report() -> &'static str {
-    "Baixou relatorio"
+#[get("/?<dia>&<periodo>")]
+fn get_report(dia: i32, periodo: i32) -> Result<String> {
+    // Abre a conexão com o banco de dados.
+    let mut conn = get_conn()?;
+
+    // Gera os relatórios de fluxo de caixa, com base no dia e período informados.
+    let report = Report::generate(&mut conn, dia, periodo)?;
+
+    Ok(report.print(dia, periodo))
 }
 
 fn main() {

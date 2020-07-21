@@ -6,15 +6,15 @@ IMAGE := erp-service
 build:
 	docker build . --tag gcr.io/$(PROJECT-ID)/$(IMAGE):$(TAG)
 
-build_and_push: build
+push: build
 	docker push gcr.io/$(PROJECT-ID)/$(IMAGE):$(TAG)
 
-build_and_deploy: build_and_push
-	source .env
+deploy: push
 	gcloud run deploy \
 		--image gcr.io/$(PROJECT-ID)/$(IMAGE):$(TAG) \
 		--add-cloudsql-instances $(INSTANCE-CONNECTION-NAME) \
-		--update-env-vars INSTANCE_CONNECTION_NAME="$(INSTANCE-CONNECTION-NAME)" \
+		--update-env-vars INSTANCE_CONNECTION_NAME=$(INSTANCE-CONNECTION-NAME) \
+		--update-env-vars GOOGLE_APPLICATION_CREDENTIALS=gcloud.json \
 		--update-env-vars DB_USER=$(DB_USER) \
 		--update-env-vars DB_PASS=$(DB_PASS) \
 		--update-env-vars DB_NAME=$(DB_NAME) \

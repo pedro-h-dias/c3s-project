@@ -1,5 +1,4 @@
 use postgres::error::Error as PostgresError;
-use rocket::{request::Request, response, response::Responder};
 use std::io::Error as IoError;
 
 pub type Result<T> = std::result::Result<T, ErpError>;
@@ -21,9 +20,3 @@ impl From<PostgresError> for ErpError {
         Self::Postgres(err)
     }
 }
-
-//impl<'r> Responder<'r> for ErpError {
-//    fn respond_to(self, _: &Request) -> response::Result<'r> {
-//        unimplemented!();
-//    }
-//}

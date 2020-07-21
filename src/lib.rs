@@ -3,6 +3,7 @@ extern crate failure;
 #[macro_use]
 extern crate serde_derive;
 
+pub mod database;
 pub mod err;
 pub mod register;
 

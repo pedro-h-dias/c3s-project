@@ -4,10 +4,10 @@
 extern crate rocket;
 
 use erp::{
+    database::get_conn,
     err::{ErpError, Result},
     Entry, NewEntry,
 };
-use postgres::{Client, NoTls};
 use rocket_contrib::{json::Json, uuid::Uuid as RocketUuid};
 use uuid::Uuid;
 
@@ -45,7 +45,7 @@ fn create_entry(entry: Json<NewEntry>) -> Result<()> {
     }
 
     // Abre a conexão com o banco de dados.
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+    let mut conn = get_conn()?;
     let mut tr = conn.transaction()?;
 
     // Persiste o lançamento no banco de dados.
@@ -57,7 +57,7 @@ fn create_entry(entry: Json<NewEntry>) -> Result<()> {
 #[get("/")]
 fn get_all_entries() -> Result<Json<Vec<Entry>>> {
     // Abre a conexão com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+    let mut conn = get_conn()?;
 
     // Busca os lançamentos com base no parâmetro informado.
     let entries = Entry::get_all(&mut conn)?;
@@ -69,7 +69,7 @@ fn get_all_entries() -> Result<Json<Vec<Entry>>> {
 #[get("/valor?<value>")]
 fn get_entries_by_value(value: f32) -> Result<Json<Vec<Entry>>> {
     // Abre a conexão com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+    let mut conn = get_conn()?;
 
     // Busca os lançamentos com base no parâmetro informado.
     let entries = Entry::get_by(&mut conn, "valor", None, Some(value))?;
@@ -81,7 +81,7 @@ fn get_entries_by_value(value: f32) -> Result<Json<Vec<Entry>>> {
 #[get("/dia?<value>")]
 fn get_entries_by_day(value: i32) -> Result<Json<Vec<Entry>>> {
     // Abre a conexão com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+    let mut conn = get_conn()?;
 
     // Busca os lançamentos com base no parâmetro informado.
     let entries = Entry::get_by(&mut conn, "dia", Some(value), None)?;
@@ -93,7 +93,7 @@ fn get_entries_by_day(value: i32) -> Result<Json<Vec<Entry>>> {
 #[get("/origem?<value>")]
 fn get_entries_by_origin(value: i32) -> Result<Json<Vec<Entry>>> {
     // Abre a conexão com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+    let mut conn = get_conn()?;
 
     // Busca os lançamentos com base no parâmetro informado.
     let entries = Entry::get_by(&mut conn, "origem", Some(value), None)?;
@@ -105,7 +105,7 @@ fn get_entries_by_origin(value: i32) -> Result<Json<Vec<Entry>>> {
 #[get("/destino?<value>")]
 fn get_entries_by_destination(value: i32) -> Result<Json<Vec<Entry>>> {
     // Abre a conexão com o banco de dados
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+    let mut conn = get_conn()?;
 
     // Busca os lançamentos com base no parâmetro informado.
     let entries = Entry::get_by(&mut conn, "destino", Some(value), None)?;
@@ -117,7 +117,7 @@ fn get_entries_by_destination(value: i32) -> Result<Json<Vec<Entry>>> {
 #[put("/delete?<id>")]
 fn delete_entry(id: RocketUuid) -> Result<()> {
     // Abre a conexão com o banco de dados.
-    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+    let mut conn = get_conn()?;
     let mut tr = conn.transaction()?;
 
     // Devido a versões conflitantes de Uuid, é necessária a conversão entre o

@@ -65,18 +65,64 @@ impl Entry {
     ///
     /// É esperado um int32 para dia, origem ou destino.
     /// Para valor, é esperado um f32.
-    pub fn get_by(conn: &mut impl GenericClient, param: &str, value: i32) -> Result<Vec<Self>> {
+    pub fn get_by(
+        conn: &mut impl GenericClient,
+        param: &str,
+        value_int: Option<i32>,
+        value_float: Option<f32>,
+    ) -> Result<Vec<Self>> {
         // Conectar no banco e fazer a query pelo parâmetro informado.
-        let rows = conn
-            .query(
+        let rows = if value_int.is_some() {
+            conn.query(
                 format!(
                     "SELECT id, valor, dia, class, origem, destino FROM erp WHERE {} = $1",
                     param
                 )
                 .as_str(),
-                &[&value],
-            )
-            .expect("Failed to query database");
+                &[&value_int.unwrap()],
+            )?
+        } else if value_float.is_some() {
+            conn.query(
+                format!(
+                    "SELECT id, valor, dia, class, origem, destino, FROM erp WHERE {} = $1",
+                    param
+                )
+                .as_str(),
+                &[&value_float.unwrap()],
+            )?
+        } else {
+            // O código não deve chegar aqui em nenhum caso.
+            unreachable!();
+        };
+
+        // Retorna NotFound caso nenhum resultado seja encontrado.
+        if rows.is_empty() {
+            return Err(ErpError::NotFound);
+        }
+
+        // Para cada linha, gerar structs, adicionar em um vetor, e retornar.
+        let mut entries: Vec<_> = Vec::with_capacity(rows.len());
+        for row in rows {
+            let id: Uuid = row.get(0);
+            let valor: f32 = row.get(1);
+            let dia: i32 = row.get(2);
+            let class: Classificacao = row.get(3);
+            let origem: Option<i32> = row.get(4);
+            let destino: Option<i32> = row.get(5);
+
+            entries.push(Entry::new(id, valor, dia, class, origem, destino));
+        }
+
+        return Ok(entries);
+    }
+
+    /// Busca todos os lançamentos no banco de dados.
+    pub fn get_all(conn: &mut impl GenericClient) -> Result<Vec<Self>> {
+        // Conectar no banco e fazer a query.
+        let rows = conn.query(
+            "SELECT id, valor, dia, class, origem, destino FROM erp",
+            &[],
+        )?;
 
         // Retorna NotFound caso nenhum resultado seja encontrado.
         if rows.is_empty() {
@@ -163,7 +209,7 @@ mod tests {
         let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)
             .expect("Failed to connect to database.");
 
-        let entries = Entry::get_by(&mut conn, "dia", 25);
+        let entries = Entry::get_by(&mut conn, "dia", Some(25), None);
 
         assert!(entries.is_ok());
 

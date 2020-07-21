@@ -22,8 +22,8 @@ impl From<PostgresError> for ErpError {
     }
 }
 
-impl<'r> Responder<'r> for ErpError {
-    fn respond_to(self, _: &Request) -> response::Result<'r> {
-        unimplemented!();
-    }
-}
+//impl<'r> Responder<'r> for ErpError {
+//    fn respond_to(self, _: &Request) -> response::Result<'r> {
+//        unimplemented!();
+//    }
+//}

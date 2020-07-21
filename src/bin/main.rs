@@ -8,9 +8,32 @@ use erp::{
     Entry, NewEntry,
 };
 use postgres::{Client, NoTls};
-use rocket::http::RawStr;
 use rocket_contrib::{json::Json, uuid::Uuid as RocketUuid};
 use uuid::Uuid;
+
+#[get("/")]
+fn help() -> String {
+    r#"
+        USAGE:
+
+        GET /lancamento/                Retorna todos lançamentos do último mês.
+        GET /lancamento/?valor=         Retorna os lançamentos com um dado valor (float32).
+        GET /lancamento/?dia=           Retorna os lançamentos em um dado dia (entre 1 e 30).
+        GET /lancamento/?origem=        Retorna os lançamentos com uma dada origem (entre 1 e 10).
+        GET /lancamento/?destino=       Retorna os lançamentos com um dado destino (entre 1 e 10).
+        PUT /lancamento/delete?id=      Deleta um lançamento dado seu identificador UUID.
+        POST /lancamento/               Insere um lançamento novo.
+
+        O input para um novo lançamento é esperado no formato JSON, conforme o exemplo a seguir.
+        {
+           "valor": 13.37,
+           "dia": 25,
+           "class": "Receita",
+           "origem": 2
+        }
+        "#
+    .to_owned()
+}
 
 #[post("/", format = "json", data = "<entry>")]
 fn create_entry(entry: Json<NewEntry>) -> Result<()> {
@@ -31,13 +54,61 @@ fn create_entry(entry: Json<NewEntry>) -> Result<()> {
     Ok(())
 }
 
-#[get("/?<param>&<value>")]
-fn get_entries(param: &RawStr, value: i32) -> Result<Json<Vec<Entry>>> {
+#[get("/")]
+fn get_all_entries() -> Result<Json<Vec<Entry>>> {
     // Abre a conexão com o banco de dados
     let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
 
     // Busca os lançamentos com base no parâmetro informado.
-    let entries = Entry::get_by(&mut conn, param.as_str(), value)?;
+    let entries = Entry::get_all(&mut conn)?;
+
+    // Retorna os lançamentos em formato JSON.
+    Ok(Json(entries))
+}
+
+#[get("/valor?<value>")]
+fn get_entries_by_value(value: f32) -> Result<Json<Vec<Entry>>> {
+    // Abre a conexão com o banco de dados
+    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+
+    // Busca os lançamentos com base no parâmetro informado.
+    let entries = Entry::get_by(&mut conn, "valor", None, Some(value))?;
+
+    // Retorna os lançamentos em formato JSON.
+    Ok(Json(entries))
+}
+
+#[get("/dia?<value>")]
+fn get_entries_by_day(value: i32) -> Result<Json<Vec<Entry>>> {
+    // Abre a conexão com o banco de dados
+    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+
+    // Busca os lançamentos com base no parâmetro informado.
+    let entries = Entry::get_by(&mut conn, "dia", Some(value), None)?;
+
+    // Retorna os lançamentos em formato JSON.
+    Ok(Json(entries))
+}
+
+#[get("/origem?<value>")]
+fn get_entries_by_origin(value: i32) -> Result<Json<Vec<Entry>>> {
+    // Abre a conexão com o banco de dados
+    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+
+    // Busca os lançamentos com base no parâmetro informado.
+    let entries = Entry::get_by(&mut conn, "origem", Some(value), None)?;
+
+    // Retorna os lançamentos em formato JSON.
+    Ok(Json(entries))
+}
+
+#[get("/destino?<value>")]
+fn get_entries_by_destination(value: i32) -> Result<Json<Vec<Entry>>> {
+    // Abre a conexão com o banco de dados
+    let mut conn = Client::connect("host=localhost dbname=erp-database user=locutor", NoTls)?;
+
+    // Busca os lançamentos com base no parâmetro informado.
+    let entries = Entry::get_by(&mut conn, "destino", Some(value), None)?;
 
     // Retorna os lançamentos em formato JSON.
     Ok(Json(entries))
@@ -68,9 +139,18 @@ fn get_report() -> &'static str {
 
 fn main() {
     rocket::ignite()
+        .mount("/", routes![help])
         .mount(
             "/lancamento",
-            routes![create_entry, get_entries, delete_entry],
+            routes![
+                create_entry,
+                get_all_entries,
+                get_entries_by_value,
+                get_entries_by_day,
+                get_entries_by_origin,
+                get_entries_by_destination,
+                delete_entry
+            ],
         )
         .mount("/relatorio", routes![get_report])
         .launch();

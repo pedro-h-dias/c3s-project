@@ -50,6 +50,7 @@ fn create_entry(entry: Json<NewEntry>) -> Result<()> {
 
     // Persiste o lançamento no banco de dados.
     new_entry.persist(&mut tr)?;
+    tr.commit()?;
 
     Ok(())
 }
@@ -128,6 +129,7 @@ fn delete_entry(id: RocketUuid) -> Result<()> {
     //
     // No futuro, é melhor utilizar deleção lógica ao invés de absoluta.
     Entry::delete(&mut tr, id)?;
+    tr.commit()?;
 
     Ok(())
 }

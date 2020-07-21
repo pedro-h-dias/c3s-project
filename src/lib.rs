@@ -85,7 +85,7 @@ impl Entry {
         } else if value_float.is_some() {
             conn.query(
                 format!(
-                    "SELECT id, valor, dia, class, origem, destino, FROM erp WHERE {} = $1",
+                    "SELECT id, valor, dia, class, origem, destino FROM erp WHERE {} = $1",
                     param
                 )
                 .as_str(),

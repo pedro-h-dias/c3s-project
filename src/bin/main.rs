@@ -14,18 +14,21 @@ use uuid::Uuid;
 #[get("/")]
 fn help() -> String {
     r#"
-        USAGE:
+        ## Rotas implementadas
 
         GET /lancamento/                Retorna todos lançamentos do último mês.
-        GET /lancamento/?valor=         Retorna os lançamentos com um dado valor (float32).
-        GET /lancamento/?dia=           Retorna os lançamentos em um dado dia (entre 1 e 30).
-        GET /lancamento/?origem=        Retorna os lançamentos com uma dada origem (entre 1 e 10).
-        GET /lancamento/?destino=       Retorna os lançamentos com um dado destino (entre 1 e 10).
+        GET /lancamento/valor?value=    Retorna os lançamentos com um dado valor (float32).
+        GET /lancamento/dia?value=      Retorna os lançamentos em um dado dia (entre 1 e 30).
+        GET /lancamento/origem?value=   Retorna os lançamentos com uma dada origem (entre 1 e 10).
+        GET /lancamento/destino?value=  Retorna os lançamentos com um dado destino (entre 1 e 10).
         GET /relatorio/?<dia>&<periodo> Fornece um relatorio de fluxo de caixa para o dia e periodo fornecidos.
         PUT /lancamento/delete?id=      Deleta um lançamento dado seu identificador UUID.
         POST /lancamento/               Insere um lançamento novo.
 
-        O input para um novo lançamento é esperado no formato JSON, conforme o exemplo a seguir.
+        ## Input
+
+        O input para um novo lançamento é esperado no formato JSON, conforme o formato a seguir.
+
         {
            "valor": 13.37,
            "dia": 25,
